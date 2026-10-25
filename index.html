@@ -2578,11 +2578,15 @@ $('madd').onclick=()=>{
 };
 
 /* ---------- scan dialog (qty + discount) ---------- */
-function addCode(code){
-  const sb=billFromText(code);if(sb){showBill(sb);return}
+let actx;
+function audioInit(){try{actx=actx||new(window.AudioContext||window.webkitAudioContext)();if(actx.state==='suspended')actx.resume()}catch(e){}}
+function beep(){try{audioInit();const t=actx.currentTime,o=actx.createOscillator(),g=actx.createGain();o.type='square';o.frequency.value=1800;o.connect(g);g.connect(actx.destination);g.gain.setValueAtTime(.18,t);g.gain.exponentialRampToValueAtTime(.001,t+.2);o.start(t);o.stop(t+.22)}catch(e){}}
+function addCode(code,fs){
+  const sb=billFromText(code);if(sb){if(fs)beep();showBill(sb);return}
   if(dlgP)return;
   code=String(code).trim();const p=products.find(x=>x.code.toLowerCase()===code.toLowerCase());
   if(!p){toast('Unknown code: '+code,1);return}
+  if(fs)beep();
   if(navigator.vibrate)navigator.vibrate(60);
   dlgP=p;$('d_nm').textContent=p.name;$('d_pr').textContent='Price: '+CUR+' '+money(p.price);$('d_q').value=1;$('d_in').value='';
   setDG(false);$('dlg').classList.add('on');
@@ -2632,9 +2636,10 @@ $('add').onclick=()=>{if($('man').value){addCode($('man').value);$('man').value=
 $('man').onkeydown=e=>{if(e.key==='Enter')$('add').click()};
 async function stopScan(){if(scanner){await scanner.stop().catch(()=>{});scanner=null}$('cam').hidden=true;$('scan').textContent='📷 Start scanning'}
 async function startScan(){
+  audioInit();
   $('cam').hidden=false;scanner=new Html5Qrcode('reader');
   try{await scanner.start({facingMode:'environment'},{fps:10,qrbox:{width:230,height:230}},txt=>{
-    const n=Date.now();if(txt===last&&n-lastT<1500)return;last=txt;lastT=n;addCode(txt)});$('scan').textContent='⏹ Stop scanning'}
+    const n=Date.now();if(txt===last&&n-lastT<1500)return;last=txt;lastT=n;addCode(txt,true)});$('scan').textContent='⏹ Stop scanning'}
   catch(e){scanner=null;$('cam').hidden=true;toast('Camera blocked – allow camera access (needs https)',1)}
 }
 $('scan').onclick=()=>scanner?stopScan():startScan();
