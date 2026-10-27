@@ -2539,7 +2539,7 @@ function dash(){
     if(f===0){free+=s*q;freeV+=s*r.price*q}else{const k=r.code||r.name,e=pm[k]||(pm[k]={name:r.name||k,u:0,v:0});e.u+=s*q;e.v+=s*f;items+=s*q;tot+=s*f;disc+=s*d;if(r.mode==='Card')card+=s*f;else cash+=s*f}});
   $('k_total').innerHTML='<span class="cur">'+CUR+'</span> '+money(tot);$('k_cash').textContent=money(cash);$('k_card').textContent=money(card);
   $('k_items').textContent=items;$('k_free').textContent=free;$('k_freev').textContent=free?'worth '+CUR+' '+money(freeV):'Giveaways';
-  $('k_disc').innerHTML='<span class="cur">'+CUR+'</span> <span class="amt">'+money(disc)+'</span>';
+  $('k_disc').innerHTML='<span class="cur">'+CUR+'</span> <span class="amt">'+Math.round(disc)+'</span>';
   const bp=Object.values(pm).filter(e=>e.u>0).sort((a,b)=>b.u-a.u||b.v-a.v)[0];
   $('k_best').textContent=bp?bp.name:'–';$('k_bestv').textContent=bp?CUR+' '+money(bp.v)+' · '+bp.u+' unit'+(bp.u===1?'':'s')+' sold':'No sales yet';
 }
