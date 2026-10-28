@@ -2354,6 +2354,8 @@ header #cfg,header #sync{font-size:23px;line-height:1;padding:8px 10px}
 .szs{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 8px}.szs button{background:#e6ece8;color:var(--navy);padding:9px 0;min-width:44px;flex:1;font-weight:700;border-radius:10px;font-size:14px}.szs button.on{background:var(--navy);color:#fff}
 .sz{display:inline-block;background:var(--navy);color:#fff;border-radius:6px;padding:1px 8px;font-size:12px;margin-left:8px;vertical-align:middle}
 .mr .szs{margin:6px 0 0}.mr .szs button{padding:6px 0;min-width:38px;font-size:12px}
+.szs button .st{display:block;font-size:10px;font-weight:600;opacity:.8;line-height:1}.szs button.oos{opacity:.45;text-decoration:line-through}
+.oosmsg{color:#b91c1c;font-size:13px;font-weight:700;margin:2px 0 6px}
 .pin{width:86px;padding:4px 8px;border:2px solid var(--navy);border-radius:8px;font:inherit;font-weight:700}
 .pl img.ic.wide{position:static;transform:none;order:2;display:block;width:min(130px,calc(100% + 8px));max-width:none;height:auto;align-self:flex-end;margin:6px 0 2px 0}
 .pl.bst{padding-right:16px}
@@ -2448,6 +2450,7 @@ header h1{white-space:nowrap}
 <div id="dlg"><div>
  <h2 id="d_nm"></h2><div class="pp" id="d_pr"></div>
  <div id="d_sz"><label>Size</label><div class="szs" id="d_szs"></div></div>
+ <div id="d_oos" class="oosmsg"></div>
  <div class="seg"><button id="d_sale" class="on">🛒 Sale</button><button id="d_gift"><img class="fi" data-fi alt=""> Giveaway</button></div>
  <label>Quantity</label><div class="qrow"><button class="alt" id="d_m">−</button><input id="d_q" type="number" inputmode="numeric" min="1" value="1"><button class="alt" id="d_p">+</button></div>
  <div id="d_dw"><label>Discount amount (AED)</label><input id="d_in" type="number" inputmode="decimal" min="0" placeholder="0"></div>
@@ -2462,6 +2465,7 @@ header h1{white-space:nowrap}
  <label>3. Sales CSV link (optional, for dashboard on all phones)</label><input id="c_sales" placeholder="https://docs.google.com/spreadsheets/d/e/…/pub?output=csv">
  <label>4. Products Form link (saves new products – optional)</label><input id="c_pform" placeholder="https://docs.google.com/forms/d/e/…/viewform?…">
  <label>5. Receipt page link – address where you host receipt.html (QR opens it)</label><input id="c_burl" placeholder="https://your-site.com/receipt.html">
+ <label>6. Stock CSV link(s) – published Stock tab (optional)</label><input id="c_stock" placeholder="https://docs.google.com/spreadsheets/d/e/…/pub?output=csv">
  <div class="bt"><button class="alt" id="c_no">Close</button><button id="c_ok">Save &amp; connect</button></div>
  <div class="box"><b>Delete last sale</b>
   <p id="ls_info"></p><p>Deletes every entry of the last bill (same bill #) from the dashboard. If it was already sent to your Google Sheet, matching reversal rows (negative qty and value) are added there.</p>
@@ -2490,7 +2494,7 @@ header h1{white-space:nowrap}
    pform    = pre-filled Google Form link for PRODUCTS     sales    = published SALES CSV link
    billUrl  = address where you host receipt.html
    Every device that opens this file connects automatically. */
-const EMBED={form:'https://docs.google.com/forms/d/e/1FAIpQLSdtq-TgIelY_GgzL8b4CAUGRKcFIcLyoE5FAUYRgHMqMcCX2Q/viewform?usp=pp_url&entry.1610647231=time&entry.996356219=bill&entry.1768389622=code&entry.1985468290=name&entry.55899081=price&entry.1084026192=qty&entry.241312929=discount&entry.1203982912=final&entry.1108877186=mode&entry.564731825=size',pform:'https://docs.google.com/forms/d/e/1FAIpQLSfuFkat_vmmb6GEZflMZA_XOnANsRg2mbbDMU9fZK6ikUU4Pw/viewform?usp=pp_url&entry.464051712=code&entry.1067477718=name&entry.954139471=price',products:'https://docs.google.com/spreadsheets/d/e/2PACX-1vTeAeQ3jzmZG7vwsqj_EaDmw4vmZddWQquVTqkqKbD_aKUHwfp4zI1y_ust0g8Pp5xGhAzL7W1Yy6qW/pub?gid=438319346&single=true&output=csv',sales:'https://docs.google.com/spreadsheets/d/e/2PACX-1vTeAeQ3jzmZG7vwsqj_EaDmw4vmZddWQquVTqkqKbD_aKUHwfp4zI1y_ust0g8Pp5xGhAzL7W1Yy6qW/pub?gid=1692350867&single=true&output=csv',billUrl:'https://umairrauf1507-ai.github.io/UAE-Warriors/receipt'};
+const EMBED={form:'https://docs.google.com/forms/d/e/1FAIpQLSdtq-TgIelY_GgzL8b4CAUGRKcFIcLyoE5FAUYRgHMqMcCX2Q/viewform?usp=pp_url&entry.1610647231=time&entry.996356219=bill&entry.1768389622=code&entry.1985468290=name&entry.55899081=price&entry.1084026192=qty&entry.241312929=discount&entry.1203982912=final&entry.1108877186=mode&entry.564731825=size',pform:'https://docs.google.com/forms/d/e/1FAIpQLSfuFkat_vmmb6GEZflMZA_XOnANsRg2mbbDMU9fZK6ikUU4Pw/viewform?usp=pp_url&entry.464051712=code&entry.1067477718=name&entry.954139471=price',products:'https://docs.google.com/spreadsheets/d/e/2PACX-1vTeAeQ3jzmZG7vwsqj_EaDmw4vmZddWQquVTqkqKbD_aKUHwfp4zI1y_ust0g8Pp5xGhAzL7W1Yy6qW/pub?gid=438319346&single=true&output=csv',sales:'https://docs.google.com/spreadsheets/d/e/2PACX-1vTeAeQ3jzmZG7vwsqj_EaDmw4vmZddWQquVTqkqKbD_aKUHwfp4zI1y_ust0g8Pp5xGhAzL7W1Yy6qW/pub?gid=1692350867&single=true&output=csv',billUrl:'https://umairrauf1507-ai.github.io/UAE-Warriors/receipt',stock:'https://docs.google.com/spreadsheets/d/e/2PACX-1vTeAeQ3jzmZG7vwsqj_EaDmw4vmZddWQquVTqkqKbD_aKUHwfp4zI1y_ust0g8Pp5xGhAzL7W1Yy6qW/pub?gid=1282507985&single=true&output=csv'};
 
 const CUR="AED";
 const DEFAULTS=[{code:'UW001',name:'UAE Warriors T - Shirt',price:75},{code:'UW002',name:'UAE Warriors Rashguard',price:60},{code:'UW003',name:'UAE Warriors Shorts',price:90},{code:'UW004',name:'UAE Warrior Hoodie',price:100},{code:'UW005',name:'UAE Warrior Cap',price:50},{code:'UW006',name:'General T Shirt',price:20},{code:'UW007',name:'Miscellaneous Item',price:20}];
@@ -2507,7 +2511,7 @@ const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',
 const ld=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))||d}catch(e){return d}};
 const sv=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
 const money=n=>(Math.round(n*100)/100).toFixed(2);
-let cfg=ld('pos_cfg',{}), products=ld('pos_products',DEFAULTS), queue=ld('pos_queue',[]), log=ld('pos_log',[]), sheetRows=ld('pos_sales',[]), pnew=ld('pos_pnew',[]),
+let cfg=ld('pos_cfg',{}), products=ld('pos_products',DEFAULTS), queue=ld('pos_queue',[]), log=ld('pos_log',[]), sheetRows=ld('pos_sales',[]), pnew=ld('pos_pnew',[]), stockRows=ld('pos_stockrows',[]),
     cart=[], mq={}, mode='Cash', scanner=null, dGift=false, mGift=false, view='dash', last='', lastT=0, period='today', dlgP=null;
 if(!products.length)products=DEFAULTS;products=addExtra(products);
 function toast(m,err){const t=$('toast');t.textContent=m;t.className='on'+(err?' err':'');clearTimeout(toast.h);toast.h=setTimeout(()=>t.className='',2200)}
@@ -2538,7 +2542,7 @@ async function loadSales(){
   if(cfg.sales){try{sheetRows=(await getCsv(cfg.sales)).slice(1).filter(r=>r[2]&&r[1]).map(r=>({t:r[1],bill:r[2],code:r[3],name:r[4],price:+r[5]||0,qty:+r[6]||0,discount:+r[7]||0,final:+r[8]||0,mode:r[9],size:r[10]||''}));sv('pos_sales',sheetRows)}catch(e){}}
   dash();
 }
-async function sync(){await flushP();await syncProducts();await flush();await loadSales();status()}
+async function sync(){await flushP();await syncProducts();await syncStock();await flush();await loadSales();status()}
 
 /* ---------- dashboard ---------- */
 function dash(){
@@ -2580,20 +2584,22 @@ $('sync').onclick=()=>{sync();toast('Updating…')};
 
 /* ---------- manual sale page ---------- */
 function mRender(){
-  $('ml').innerHTML=products.map(p=>{const nz=needSize(p.code),z=nz?(ms[p.code]||''):'',k=p.code+'|'+z;
-    const sel=nz?'<div class="szs">'+prodSizes(p.code).map(x=>`<button type="button" data-mz="${esc(p.code)}" data-z="${x}" class="${x===z?'on':''}">${x}${mq[p.code+'|'+x]?' · '+mq[p.code+'|'+x]:''}</button>`).join('')+'</div>':'';
-    return `<div class="mr"><div style="flex:1;min-width:0"><div class="nm">${esc(p.name)}</div><div class="sub">${esc(p.code)} · ${isFlex(p.code)?'enter price in cart':CUR+' '+money(p.price)}</div>${sel}</div>
+  $('ml').innerHTML=products.map(p=>{const nz=needSize(p.code),z=nz?(ms[p.code]||''):'',k=p.code+'|'+z,ci=chipInfo(p.code),oosL=ci.list.filter(x=>x.oos).map(x=>x.z||'');
+    const sel=nz?'<div class="szs">'+ci.list.map(x=>`<button type="button" data-mz="${esc(p.code)}" data-z="${x.z}" class="${x.z===z?'on':''}${x.oos?' oos':''}">${x.z}${mq[p.code+'|'+x.z]?' · '+mq[p.code+'|'+x.z]:''}${ci.tr?`<span class="st">${x.oos?0:x.a}</span>`:''}</button>`).join('')+'</div>':'';
+    const stk=ci.tr?(nz?(oosL.length?`<div class="oosmsg">\u26a0 Out of Stock${oosL.length<ci.list.length?': '+oosL.join(', '):''}</div>`:''):(ci.list[0].oos?'<div class="oosmsg">\u26a0 Out of Stock</div>':`<div class="sub">Available: ${ci.list[0].a}</div>`)):'';
+    return `<div class="mr"><div style="flex:1;min-width:0"><div class="nm">${esc(p.name)}</div><div class="sub">${esc(p.code)} · ${isFlex(p.code)?'enter price in cart':CUR+' '+money(p.price)}</div>${sel}${stk}</div>
   <div class="q"><button data-md="${esc(k)}">−</button><b>${mq[k]||0}</b><button data-mu="${esc(k)}">+</button></div></div>`}).join('');
   let n=0,v=0;Object.entries(mq).forEach(([k,q])=>{const p=products.find(x=>x.code===k.split('|')[0]);if(p&&q>0){n+=q;v+=q*p.price}});
   $('mcount').textContent=n+' item'+(n===1?'':'s');$('mtot').textContent=mGift?'FREE':CUR+' '+money(v);$('m_sale').classList.toggle('on',!mGift);$('m_gift').classList.toggle('on',mGift);$('madd').textContent=mGift?'Add as giveaway':'Add to sale';
 }
 $('ml').onclick=e=>{const t=e.target.closest('button');if(!t)return;
-  if(t.dataset.mz!=null)ms[t.dataset.mz]=(ms[t.dataset.mz]===t.dataset.z?'':t.dataset.z);
-  else if(t.dataset.mu!=null){const k=t.dataset.mu;if(needSize(k.split('|')[0])&&k.endsWith('|')){toast('Select a size first',1);return}mq[k]=(mq[k]||0)+1}
+  if(t.dataset.mz!=null){if(t.classList.contains('oos')){toast('Out of Stock \u2013 size '+t.dataset.z,1);return}ms[t.dataset.mz]=(ms[t.dataset.mz]===t.dataset.z?'':t.dataset.z)}
+  else if(t.dataset.mu!=null){const k=t.dataset.mu;if(needSize(k.split('|')[0])&&k.endsWith('|')){toast('Select a size first',1);return}const kk=k.split('|'),ci=chipInfo(kk[0]);if(ci.tr){const x=ci.list.find(y=>y.z===kk[1]),av=x?x.a:0;if(av<=0){toast('Out of Stock',1);return}if((mq[k]||0)+1>av){toast('Only '+av+' available',1);return}}mq[k]=(mq[k]||0)+1}
   else if(t.dataset.md!=null){const k=t.dataset.md;mq[k]=Math.max(0,(mq[k]||0)-1)}else return;mRender()};
 $('m_sale').onclick=()=>{mGift=false;mRender()};$('m_gift').onclick=()=>{mGift=true;mRender()};
 $('madd').onclick=()=>{
   const ent=Object.entries(mq).filter(([k,q])=>q>0);if(!ent.length){toast('Select at least one item',1);return}
+  for(const [k,q] of ent){const kk=k.split('|'),ci=chipInfo(kk[0]);if(ci.tr){const x=ci.list.find(y=>y.z===kk[1]),av=x?x.a:0;if(q>av){toast(av<=0?'Out of Stock: '+kk[0]+(kk[1]?' '+kk[1]:''):'Only '+av+' left: '+kk[0]+(kk[1]?' '+kk[1]:''),1);return}}}
   ent.forEach(([k,q])=>{const c=k.split('|'),p=products.find(x=>x.code===c[0]);if(p)addLine(p,q,0,mGift,true,c[1]||'')});mq={};ms={};openSale(false);toast(mGift?'Giveaway items added – tap Complete sale to save':'Items added – set discount, choose Cash/Card and complete');
 };
 
@@ -2621,13 +2627,47 @@ const dD=()=>dGift?0:Math.min(Math.max(+$('d_in').value||0,0),dlgP.price*dQ());
 function dFin(){$('d_fin').textContent=dGift?'FREE · '+dQ()+' item'+(dQ()===1?'':'s'):CUR+' '+money(dlgP.price*dQ()-dD())}
 function setDG(g){dGift=g;$('d_sale').classList.toggle('on',!g);$('d_gift').classList.toggle('on',g);$('d_dw').classList.toggle('hide',g);dFin()}
 $('d_sale').onclick=()=>setDG(false);$('d_gift').onclick=()=>setDG(true);
-function buildSz(p){$('d_sz').classList.toggle('hide',!needSize(p.code));$('d_szs').innerHTML=prodSizes(p.code).map(z=>'<button type="button" data-z="'+z+'" class="'+(z===dSize?'on':'')+'">'+z+'</button>').join('')}
-$('d_szs').onclick=e=>{const z=e.target.dataset.z;if(!z)return;dSize=(dSize===z?'':z);buildSz(dlgP)};
-function dClose(ok){if(ok&&dlgP&&needSize(dlgP.code)&&!dSize){toast('Please select a size',1);return}const p=dlgP,q=dQ(),d=dD(),g=dGift,z=dSize;dlgP=null;dSize='';$('dlg').classList.remove('on');if(ok)addLine(p,q,d,g,false,z)}
+function buildSz(p){const ci=chipInfo(p.code),sz=needSize(p.code);$('d_sz').classList.toggle('hide',!sz);
+  $('d_szs').innerHTML=sz?ci.list.map(x=>'<button type="button" data-z="'+x.z+'" class="'+(x.z===dSize?'on':'')+(x.oos?' oos':'')+'">'+x.z+(ci.tr?'<span class="st">'+(x.oos?0:x.a)+'</span>':'')+'</button>').join(''):'';
+  const o=ci.list.filter(x=>x.oos).map(x=>x.z||'');let m='';
+  if(ci.tr){if(!sz)m=o.length?'\u26a0 Out of Stock':'<span style="color:#475569">Available: '+ci.list[0].a+'</span>';else if(o.length)m='\u26a0 Out of Stock'+(o.length<ci.list.length?': '+o.join(', '):'')}
+  $('d_oos').innerHTML=m}
+$('d_szs').onclick=e=>{const b=e.target.closest('button'),z=b&&b.dataset.z;if(!z)return;if(b.classList.contains('oos')){toast('Out of Stock \u2013 size '+z,1);return}dSize=(dSize===z?'':z);buildSz(dlgP)};
+function dClose(ok){
+  if(ok&&dlgP&&needSize(dlgP.code)&&!dSize){toast('Please select a size',1);return}
+  if(ok&&dlgP){const ci=chipInfo(dlgP.code);if(ci.tr){const x=ci.list.find(y=>y.z===(dSize||'')),av=x?x.a:0;if(av<=0){toast('Out of Stock',1);return}if(dQ()>av){toast('Only '+av+' available'+(dSize?' in size '+dSize:''),1);return}}}
+  const p=dlgP,q=dQ(),d=dD(),g=dGift,z=dSize;dlgP=null;dSize='';$('dlg').classList.remove('on');if(ok)addLine(p,q,d,g,false,z)}
 $('d_q').oninput=dFin;$('d_in').oninput=dFin;
 $('d_m').onclick=()=>{$('d_q').value=Math.max(1,dQ()-1);dFin()};$('d_p').onclick=()=>{$('d_q').value=dQ()+1;dFin()};
 $('d_ok').onclick=()=>dClose(true);$('d_no').onclick=()=>dClose(false);
 $('dlg').onkeydown=e=>{if(e.key==='Enter')$('d_ok').click()};
+/* ---------- stock tracking ---------- */
+const rowSize=r=>r.size||((/\((XS|S|M|L|XL|2XL|3XL)\)\s*$/.exec(r.name||'')||[])[1])||'';
+function localRows(){const known=new Set(sheetRows.map(r=>r.bill)),o=[];log.forEach(b=>{if(!known.has(b.bill))b.items.forEach(i=>o.push({t:b.time,bill:b.bill,code:i.code,name:i.name,size:i.size||'',qty:i.qty}))});return o}
+function parseD(v){v=String(v||'').trim();if(!v)return 0;
+  const M=['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];let m=v.match(/^(\d{1,2})[-\/ ]([A-Za-z]{3})[A-Za-z]*[-\/ ](\d{2,4})(?:[ T]+(\d{1,2}):(\d{2}))?$/);
+  if(m){const y=+m[3]<100?2000+ +m[3]:+m[3],mo=M.indexOf(m[2].toLowerCase());return mo<0?0:new Date(y,mo,+m[1],+(m[4]||0),+(m[5]||0)).getTime()}
+  m=v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})(?:[ T]+(\d{1,2}):(\d{2}))?$/);
+  if(m){const y=+m[3]<100?2000+ +m[3]:+m[3];return new Date(y,+m[2]-1,+m[1],+(m[4]||0),+(m[5]||0)).getTime()}
+  m=v.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);if(m)return new Date(+m[1],+m[2]-1,+m[3]).getTime();
+  const t=Date.parse(v);return isNaN(t)?0:t}
+function availAll(){
+  const tr=new Set(),q={},base={};
+  stockRows.forEach(r=>{const k=r.code+'|'+r.size;tr.add(r.code);q[k]=(q[k]||0)+r.qty;if(r.d){const t=parseD(r.d);if(t&&(!(k in base)||t<base[k]))base[k]=t}});
+  const sold={};
+  sheetRows.concat(localRows()).forEach(r=>{const c=String(r.code||'').toUpperCase();if(!tr.has(c))return;const k=c+'|'+rowSize(r);if(k in base&&Date.parse(r.t)<base[k])return;sold[k]=(sold[k]||0)+(+r.qty||0)});
+  return{tracked:c=>tr.has(String(c).toUpperCase()),get:(c,z)=>{c=String(c).toUpperCase();if(!tr.has(c))return Infinity;const k=c+'|'+(z||'');return Math.max(0,(q[k]||0)-(sold[k]||0))}};
+}
+const cartQty=(c,z)=>cart.reduce((n,l)=>n+(String(l.code).toUpperCase()===String(c).toUpperCase()&&(l.size||'')===(z||'')?l.qty:0),0);
+function chipInfo(code){const A=availAll(),zs=prodSizes(code),tr=A.tracked(code);
+  return{tr,list:(zs.length?zs:['']).map(z=>{const a=tr?Math.max(0,A.get(code,z)-cartQty(code,z)):Infinity;return{z,a,oos:tr&&a<=0}})}}
+async function syncStock(){
+  if(!cfg.stock)return;
+  try{const out=[];for(const u of cfg.stock.split(/\s+/).filter(Boolean)){const rows=await getCsv(u),o=/^timestamp/i.test(((rows[0]||[])[0]||'').trim())?1:0;
+      rows.slice(1).forEach(r=>{const code=String(r[o]||'').trim().toUpperCase(),qty=parseFloat(r[o+2]);if(!code||isNaN(qty))return;
+        let z=String(r[o+1]||'').trim().toUpperCase();if(['-','NONE','ONE','N/A','ONESIZE'].includes(z))z='';out.push({code,size:z,qty,d:String(r[o+3]||'').trim()})})}
+    stockRows=out;sv('pos_stockrows',stockRows)}catch(e){}
+}
 function addLine(p,q,d,free,quiet,size){size=size||'';
   const l=isFlex(p.code)?null:cart.find(x=>x.code===p.code&&x.free===free&&(x.size||'')===size);
   if(l){l.qty+=q;l.discount+=d}else cart.push({code:p.code,name:p.name,size:size,price:p.price,qty:q,discount:d,free:free});
@@ -2644,7 +2684,7 @@ function render(){
   $('tot').textContent=CUR+' '+money(cart.reduce((s,l)=>s+fin(l),0));
 }
 $('cart').addEventListener('click',e=>{const t=e.target.closest('button')||e.target;
-  if(t.dataset.u!=null)cart[t.dataset.u].qty++;
+  if(t.dataset.u!=null){const l=cart[t.dataset.u],ci=chipInfo(l.code);if(ci.tr){const x=ci.list.find(y=>y.z===(l.size||''));if(!x||x.a<=0){toast('Out of Stock',1);return}}l.qty++}
   else if(t.dataset.d!=null){const l=cart[t.dataset.d];if(--l.qty<1)cart.splice(t.dataset.d,1)}
   else if(t.dataset.r!=null)cart.splice(t.dataset.r,1);
   else if(t.dataset.f!=null)cart[t.dataset.f].free=!cart[t.dataset.f].free;else return;render()});
@@ -2700,7 +2740,7 @@ $('ls_btn').onclick=()=>{
   $('ls_msg').textContent='✔ Last Sale Deleted – Bill '+id+' ('+n+' entr'+(n===1?'y':'ies')+')';
   toast('Last Sale Deleted');
 };
-function openCfg(){$('ls_msg').textContent='';const r=cfg.raw||{};$('c_form').value=r.form||'';$('c_pform').value=r.pform||'';$('c_burl').value=cfg.billUrl||'';$('c_prod').value=r.products||'';$('c_sales').value=r.sales||'';refreshLast();$('cfgm').classList.add('on')}
+function openCfg(){$('ls_msg').textContent='';const r=cfg.raw||{};$('c_form').value=r.form||'';$('c_pform').value=r.pform||'';$('c_burl').value=cfg.billUrl||'';$('c_stock').value=cfg.stock||'';$('c_prod').value=r.products||'';$('c_sales').value=r.sales||'';refreshLast();$('cfgm').classList.add('on')}
 $('cfg').onclick=openCfg;$('c_no').onclick=()=>$('cfgm').classList.remove('on');
 $('c_ok').onclick=()=>{
   const f=$('c_form').value.trim(),c={raw:{form:f,pform:$('c_pform').value.trim(),products:$('c_prod').value.trim(),sales:$('c_sales').value.trim()}};
@@ -2715,7 +2755,7 @@ $('c_ok').onclick=()=>{
     const miss=['code','name','price'].filter(k=>!map[k]);
     if(miss.length){toast('Fill these Products Form fields: '+miss.join(', '),1);return}
     c.pform=m[1]+'/formResponse';c.pmap=map}
-  c.billUrl=$('c_burl').value.trim();c.products=c.raw.products;c.sales=c.raw.sales;c.resetAt=cfg.resetAt;cfg=c;sv('pos_cfg',cfg);$('cfgm').classList.remove('on');toast('Saved');status();sync();
+  c.billUrl=$('c_burl').value.trim();c.stock=$('c_stock').value.trim();c.products=c.raw.products;c.sales=c.raw.sales;c.resetAt=cfg.resetAt;cfg=c;sv('pos_cfg',cfg);$('cfgm').classList.remove('on');toast('Saved');status();sync();
 };
 $('c_reset').onclick=()=>{
   if($('c_rst').value.trim().toUpperCase()!=='RESET'){toast('Type RESET to confirm',1);return}
@@ -2794,7 +2834,7 @@ function fitTitle(){const h=$('ttl');h.style.fontSize='';if(!h.querySelector('sm
 try{let lw=0;new ResizeObserver(()=>{const w=$('ttl').clientWidth;if(w!==lw){lw=w;fitTitle()}}).observe($('ttl'))}catch(e){}
 window.addEventListener('load',fitTitle);
 (function(){const sig=JSON.stringify(EMBED);if(!Object.values(EMBED).some(Boolean)||ld('pos_embed','')===sig)return;
-  $('c_form').value=EMBED.form;$('c_pform').value=EMBED.pform;$('c_prod').value=EMBED.products;$('c_sales').value=EMBED.sales;$('c_burl').value=EMBED.billUrl;
+  $('c_form').value=EMBED.form;$('c_pform').value=EMBED.pform;$('c_prod').value=EMBED.products;$('c_sales').value=EMBED.sales;$('c_burl').value=EMBED.billUrl;$('c_stock').value=EMBED.stock;
   $('c_ok').click();sv('pos_embed',sig)})();
 document.querySelectorAll('img[data-fi]').forEach(i=>i.src=FREEIMG);
 render();status();dash();sync();
