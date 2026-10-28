@@ -2564,8 +2564,8 @@ function dash(){
 $('chips').onclick=e=>{const p=e.target.dataset.p;if(!p)return;period=p;document.querySelectorAll('#chips button').forEach(b=>b.classList.toggle('on',b===e.target));dash()};
 $('exp').onclick=()=>{
   if(!log.length){toast('No sales saved on this phone yet',1);return}
-  const q=v=>'"'+String(v).replace(/"/g,'""')+'"';let t='Time,Bill,Code,Name,Price,Qty,Discount,Final,Mode\n';
-  log.forEach(b=>b.items.forEach(i=>{t+=[b.time,b.bill,i.code,i.name,i.price,i.qty,i.discount,i.final,b.mode].map(q).join(',')+'\n'}));
+  const q=v=>'"'+String(v).replace(/"/g,'""')+'"';let t='Time,Bill,Code,Name,Price,Qty,Discount,Final,Mode,Size\n';
+  log.forEach(b=>b.items.forEach(i=>{t+=[b.time,b.bill,i.code,i.name,i.price,i.qty,i.discount,i.final,b.mode,i.size||''].map(q).join(',')+'\n'}));
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type:'text/csv'}));a.download='sales_'+new Date().toISOString().slice(0,10)+'.csv';document.body.appendChild(a);a.click();a.remove();
 };
 
@@ -2652,11 +2652,11 @@ function parseD(v){v=String(v||'').trim();if(!v)return 0;
   m=v.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);if(m)return new Date(+m[1],+m[2]-1,+m[3]).getTime();
   const t=Date.parse(v);return isNaN(t)?0:t}
 function availAll(){
-  const tr=new Set(),q={},base={};
-  stockRows.forEach(r=>{const k=r.code+'|'+r.size;tr.add(r.code);q[k]=(q[k]||0)+r.qty;if(r.d){const t=parseD(r.d);if(t&&(!(k in base)||t<base[k]))base[k]=t}});
-  const sold={};
-  sheetRows.concat(localRows()).forEach(r=>{const c=String(r.code||'').toUpperCase();if(!tr.has(c))return;const k=c+'|'+rowSize(r);if(k in base&&Date.parse(r.t)<base[k])return;sold[k]=(sold[k]||0)+(+r.qty||0)});
-  return{tracked:c=>tr.has(String(c).toUpperCase()),get:(c,z)=>{c=String(c).toUpperCase();if(!tr.has(c))return Infinity;const k=c+'|'+(z||'');return Math.max(0,(q[k]||0)-(sold[k]||0))}};
+  const tr=new Set(),q={},base={},av={};
+  stockRows.forEach(r=>{const k=r.code+'|'+r.size;tr.add(r.code);q[k]=(q[k]||0)+r.qty;if(r.a!=null)av[k]=r.a;if(r.d){const t=parseD(r.d);if(t&&(!(k in base)||t<base[k]))base[k]=t}});
+  const sold={},src=[];sheetRows.forEach(r=>src.push([r,0]));localRows().forEach(r=>src.push([r,1]));
+  src.forEach(([r,loc])=>{const c=String(r.code||'').toUpperCase();if(!tr.has(c))return;const k=c+'|'+rowSize(r);if(!loc&&k in av)return;if(k in base&&Date.parse(r.t)<base[k])return;sold[k]=(sold[k]||0)+(+r.qty||0)});
+  return{tracked:c=>tr.has(String(c).toUpperCase()),get:(c,z)=>{c=String(c).toUpperCase();if(!tr.has(c))return Infinity;const k=c+'|'+(z||'');return Math.max(0,(k in av?av[k]:(q[k]||0))-(sold[k]||0))}};
 }
 const cartQty=(c,z)=>cart.reduce((n,l)=>n+(String(l.code).toUpperCase()===String(c).toUpperCase()&&(l.size||'')===(z||'')?l.qty:0),0);
 function chipInfo(code){const A=availAll(),zs=prodSizes(code),tr=A.tracked(code);
@@ -2664,8 +2664,8 @@ function chipInfo(code){const A=availAll(),zs=prodSizes(code),tr=A.tracked(code)
 async function syncStock(){
   if(!cfg.stock)return;
   try{const out=[];for(const u of cfg.stock.split(/\s+/).filter(Boolean)){const rows=await getCsv(u),o=/^timestamp/i.test(((rows[0]||[])[0]||'').trim())?1:0;
-      rows.slice(1).forEach(r=>{const code=String(r[o]||'').trim().toUpperCase(),qty=parseFloat(r[o+2]);if(!code||isNaN(qty))return;
-        let z=String(r[o+1]||'').trim().toUpperCase();if(['-','NONE','ONE','N/A','ONESIZE'].includes(z))z='';out.push({code,size:z,qty,d:String(r[o+3]||'').trim()})})}
+      const ai=(rows[0]||[]).findIndex(h=>/avail|balance/i.test(String(h)));rows.slice(1).forEach(r=>{const code=String(r[o]||'').trim().toUpperCase(),qty=parseFloat(r[o+2]);if(!code||isNaN(qty))return;
+        let z=String(r[o+1]||'').trim().toUpperCase();if(['-','NONE','ONE','N/A','ONESIZE'].includes(z))z='';out.push({code,size:z,qty,d:String(r[o+3]||'').trim(),a:(ai>=0&&String(r[ai]||'').trim()!==''&&!isNaN(parseFloat(r[ai])))?parseFloat(r[ai]):undefined})})}
     stockRows=out;sv('pos_stockrows',stockRows)}catch(e){}
 }
 function addLine(p,q,d,free,quiet,size){size=size||'';
