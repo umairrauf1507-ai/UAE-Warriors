@@ -2643,7 +2643,7 @@ $('d_ok').onclick=()=>dClose(true);$('d_no').onclick=()=>dClose(false);
 $('dlg').onkeydown=e=>{if(e.key==='Enter')$('d_ok').click()};
 /* ---------- stock tracking ---------- */
 const rowSize=r=>r.size||((/\((XS|S|M|L|XL|2XL|3XL)\)\s*$/.exec(r.name||'')||[])[1])||'';
-function localRows(){const known=new Set(sheetRows.map(r=>r.bill)),o=[];log.forEach(b=>{if(!known.has(b.bill))b.items.forEach(i=>o.push({t:b.time,bill:b.bill,code:i.code,name:i.name,size:i.size||'',qty:i.qty}))});return o}
+function localRows(){const known=new Set(sheetRows.map(r=>r.bill)),o=[];log.forEach(b=>b.items.forEach(i=>o.push({t:b.time,bill:b.bill,code:i.code,name:i.name,size:i.size||'',qty:i.qty,known:known.has(b.bill),f0:b.f0,inF:b.inF})));return o}
 function parseD(v){v=String(v||'').trim();if(!v)return 0;
   const M=['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];let m=v.match(/^(\d{1,2})[-\/ ]([A-Za-z]{3})[A-Za-z]*[-\/ ](\d{2,4})(?:[ T]+(\d{1,2}):(\d{2}))?$/);
   if(m){const y=+m[3]<100?2000+ +m[3]:+m[3],mo=M.indexOf(m[2].toLowerCase());return mo<0?0:new Date(y,mo,+m[1],+(m[4]||0),+(m[5]||0)).getTime()}
@@ -2654,10 +2654,19 @@ function parseD(v){v=String(v||'').trim();if(!v)return 0;
 function availAll(){
   const tr=new Set(),q={},base={},av={};
   stockRows.forEach(r=>{const k=r.code+'|'+r.size;tr.add(r.code);q[k]=(q[k]||0)+r.qty;if(r.a!=null)av[k]=r.a;if(r.d){const t=parseD(r.d);if(t&&(!(k in base)||t<base[k]))base[k]=t}});
-  const sold={},src=[];sheetRows.forEach(r=>src.push([r,0]));localRows().forEach(r=>src.push([r,1]));
-  src.forEach(([r,loc])=>{const c=String(r.code||'').toUpperCase();if(!tr.has(c))return;const k=c+'|'+rowSize(r);if(!loc&&k in av)return;if(k in base&&Date.parse(r.t)<base[k])return;sold[k]=(sold[k]||0)+(+r.qty||0)});
-  return{tracked:c=>tr.has(String(c).toUpperCase()),get:(c,z)=>{c=String(c).toUpperCase();if(!tr.has(c))return Infinity;const k=c+'|'+(z||'');return Math.max(0,(k in av?av[k]:(q[k]||0))-(sold[k]||0))}};
+  const sold={},src=[],now=Date.now();sheetRows.forEach(r=>src.push([r,0]));localRows().forEach(r=>src.push([r,1]));
+  src.forEach(([r,loc])=>{const c=String(r.code||'').toUpperCase();if(!tr.has(c))return;const k=c+'|'+rowSize(r);
+    if(!loc){if(k in av)return}
+    else if(k in av&&r.f0&&(k in r.f0)){if(r.inF||now-Date.parse(r.t)>864e5)return}
+    else if(r.known)return;
+    if(k in base&&Date.parse(r.t)<base[k])return;sold[k]=(sold[k]||0)+(+r.qty||0)});
+  return{tracked:c=>tr.has(String(c).toUpperCase()),raw:k=>av[k],get:(c,z)=>{c=String(c).toUpperCase();if(!tr.has(c))return Infinity;const k=c+'|'+(z||'');return Math.max(0,(k in av?av[k]:(q[k]||0))-(sold[k]||0))}};
 }
+function markReflected(){const A=availAll();let ch=false;
+  log.forEach(b=>{if(!b.f0||b.inF)return;const qk={};b.items.forEach(i=>{const k=String(i.code).toUpperCase()+'|'+(i.size||'');qk[k]=(qk[k]||0)+i.qty});
+    let ok=true,any=false;for(const k in qk){if(!(k in b.f0))continue;any=true;const raw=A.raw(k);if(raw==null){ok=false;break}const dl=b.f0[k]-raw;if(!(qk[k]>0?dl>=qk[k]:dl<=qk[k])){ok=false;break}}
+    if(any&&ok){b.inF=true;ch=true}});
+  if(ch)sv('pos_log',log)}
 const cartQty=(c,z)=>cart.reduce((n,l)=>n+(String(l.code).toUpperCase()===String(c).toUpperCase()&&(l.size||'')===(z||'')?l.qty:0),0);
 function chipInfo(code){const A=availAll(),zs=prodSizes(code),tr=A.tracked(code);
   return{tr,list:(zs.length?zs:['']).map(z=>{const a=tr?Math.max(0,A.get(code,z)-cartQty(code,z)):Infinity;return{z,a,oos:tr&&a<=0}})}}
@@ -2666,7 +2675,7 @@ async function syncStock(){
   try{const out=[];for(const u of cfg.stock.split(/\s+/).filter(Boolean)){const rows=await getCsv(u),o=/^timestamp/i.test(((rows[0]||[])[0]||'').trim())?1:0;
       const ai=(rows[0]||[]).findIndex(h=>/avail|balance/i.test(String(h)));rows.slice(1).forEach(r=>{const code=String(r[o]||'').trim().toUpperCase(),qty=parseFloat(r[o+2]);if(!code||isNaN(qty))return;
         let z=String(r[o+1]||'').trim().toUpperCase();if(['-','NONE','ONE','N/A','ONESIZE'].includes(z))z='';out.push({code,size:z,qty,d:String(r[o+3]||'').trim(),a:(ai>=0&&String(r[ai]||'').trim()!==''&&!isNaN(parseFloat(r[ai])))?parseFloat(r[ai]):undefined})})}
-    stockRows=out;sv('pos_stockrows',stockRows)}catch(e){}
+    stockRows=out;sv('pos_stockrows',stockRows);markReflected()}catch(e){}
 }
 function addLine(p,q,d,free,quiet,size){size=size||'';
   const l=isFlex(p.code)?null:cart.find(x=>x.code===p.code&&x.free===free&&(x.size||'')===size);
@@ -2695,6 +2704,7 @@ $('done').onclick=async()=>{
   const r2=n=>Math.round(n*100)/100;
   const bill={bill:'B'+Date.now().toString(36).toUpperCase(),time:new Date().toISOString(),mode:cart.every(l=>l.free)?'Giveaway':mode,
     items:cart.map(l=>({code:l.code,name:l.name,size:l.size||'',price:l.price,qty:l.qty,discount:r2(l.free?l.price*l.qty:l.discount),final:r2(fin(l))}))};
+  {const A=availAll(),f0={};bill.items.forEach(i=>{const k=String(i.code).toUpperCase()+'|'+(i.size||''),r=A.raw(k);if(r!=null)f0[k]=r});if(Object.keys(f0).length)bill.f0=f0}
   queue.push(bill);log.push(bill);sv('pos_queue',queue);sv('pos_log',log);
   const t=$('tot').textContent;cart=[];ms={};mq={};dSize='';render();toast('Sale saved · '+t);
   await stopScan();show('dash');showBill(bill);flush().then(loadSales);
