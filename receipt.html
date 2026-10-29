@@ -2322,7 +2322,7 @@ body.rv>*:not(#bill){display:none!important}body.rv #b_close{display:none}body.r
  <div class="bact nop"><button class="bb" id="b_print"><span>🖨</span>Print Receipt</button><button class="bb" id="b_pdf"><span>📄</span>Save PDF</button></div></div></div>
 <div id="toast"></div>
 <script>
-const CUR="AED",cfg={},products=[],$=id=>document.getElementById(id);
+const isFlex=c=>String(c).toUpperCase()==="UW007",CUR="AED",cfg={},products=[],$=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const money=n=>(Math.round(n*100)/100).toFixed(2),billTot=b=>b.items.reduce((s,i)=>s+i.final,0);
 function toast(m,err){const t=$('toast');t.textContent=m;t.className='on'+(err?' err':'');clearTimeout(toast.h);toast.h=setTimeout(()=>t.className='',2200)}
@@ -2340,7 +2340,7 @@ function showBill(b){
   $('bbody').innerHTML='<div class="bh"><b>UAE Warriors Merchandize</b><span class="by">by Palms Sports</span>Customer Bill</div>'+
    '<div class="bm"><span>Bill No: <b>'+esc(b.bill)+'</b></span><span>'+esc(d.toLocaleString())+'</span></div>'+
    '<table><tr><th>Code</th><th class="r">Price</th><th class="r">Qty</th><th class="r">Disc.</th><th class="r">Total</th></tr>'+
-   b.items.map(i=>'<tr><td>'+esc(i.code)+(i.size?' · '+esc(i.size):'')+'<small>'+esc(bName(i))+'</small></td><td class="r">'+money(i.price)+'</td><td class="r">'+i.qty+'</td><td class="r">'+(lineDisc(i)>0?'-'+money(lineDisc(i)):'–')+'</td><td class="r">'+(i.final===0?'FREE':money(i.final))+'</td></tr>').join('')+'</table>'+
+   b.items.map(i=>'<tr><td>'+(isFlex(i.code)?'Miscellaneous Item'+(i.size?' · '+esc(i.size):''):esc(i.code)+(i.size?' · '+esc(i.size):'')+'<small>'+esc(bName(i))+'</small>')+'</td><td class="r">'+money(i.price)+'</td><td class="r">'+i.qty+'</td><td class="r">'+(lineDisc(i)>0?'-'+money(lineDisc(i)):'–')+'</td><td class="r">'+(i.final===0?'FREE':money(i.final))+'</td></tr>').join('')+'</table>'+
    (dsc>0?'<div class="bm" style="margin:8px 0 0"><span>Subtotal</span><span>'+CUR+' '+money(tot+dsc)+'</span></div><div class="bm" style="margin:2px 0 0"><span>Discount</span><span>-'+CUR+' '+money(dsc)+'</span></div>':'')+'<div class="bt2"><span>Total</span><span>'+CUR+' '+money(tot)+'</span></div>'+
    '<div class="bm" style="margin-top:6px"><span>Payment: '+esc(b.mode)+'</span></div>'+
    (qr?'<div class="bq">'+qr+'</div>':'')+'<div class="bf">Thank you for shopping with us!</div>';
@@ -2352,7 +2352,7 @@ function billPdf(b){
   const T=(t,x,sz,f)=>{c+='BT /F'+f+' '+sz+' Tf '+x+' '+y+' Td ('+A(t)+') Tj ET\n'},L=()=>{c+='20 '+y+' 260 0.8 re f\n'};
   T('UAE Warriors Merchandize',20,14,2);y-=12;T('by Palms Sports',20,8,1);y-=16;T('Customer Bill',20,10,1);y-=22;T('Bill No: '+b.bill,20,11,2);y-=14;T(new Date(b.time).toLocaleString(),20,9,1);y-=13;T('Payment: '+b.mode,20,9,1);y-=10;L();y-=14;
   T('Code',20,9,2);T('Price',110,9,2);T('Qty',155,9,2);T('Disc.',190,9,2);T('Total',240,9,2);
-  b.items.forEach(i=>{y-=16;T(i.code+(i.size?' - '+i.size:''),20,10,1);T(money(i.price),110,10,1);T(i.qty,155,10,1);T(lineDisc(i)>0?'-'+money(lineDisc(i)):'-',190,10,1);T(i.final===0?'FREE':money(i.final),240,10,1);y-=11;T(bName(i).slice(0,45),20,8,1);y-=3});
+  b.items.forEach(i=>{y-=16;T(isFlex(i.code)?'Misc. Item':i.code+(i.size?' - '+i.size:''),20,10,1);T(money(i.price),110,10,1);T(i.qty,155,10,1);T(lineDisc(i)>0?'-'+money(lineDisc(i)):'-',190,10,1);T(i.final===0?'FREE':money(i.final),240,10,1);y-=11;T(bName(i).slice(0,45),20,8,1);y-=3});
   y-=8;L();if(dsc>0){y-=16;T('Subtotal',20,10,1);T(CUR+' '+money(tot+dsc),150,10,1);y-=14;T('Discount',20,10,1);T('-'+CUR+' '+money(dsc),150,10,1);y-=4}y-=22;T('TOTAL',20,14,2);T(CUR+' '+money(tot),150,14,2);y-=18;
   try{const q=billQ(b),n=q.getModuleCount(),m=qh/n,x0=(W-qh)/2;for(let r=0;r<n;r++)for(let k=0;k<n;k++)if(q.isDark(r,k))c+=(x0+k*m).toFixed(2)+' '+(y-(r+1)*m).toFixed(2)+' '+m.toFixed(2)+' '+m.toFixed(2)+' re f\n'}catch(e){}
   y-=qh+16;T('Thank you for shopping with us!',70,9,1);
