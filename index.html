@@ -2638,7 +2638,7 @@ function evSet(n,a,l){n=String(n||'').replace(/\D/g,'').slice(0,4);a=String(a||'
 $('ev_set').onclick=()=>{const v=$('ev_s').value.replace(/\D/g,''),a=$('ev_sa').value.trim(),l=$('ev_sl').value.trim();if(!v){toast('Enter the event number',1);return}if(!a){toast('Enter the agent name',1);return}if(!l){toast('Enter the event location',1);return}evSet(v,a,l)};
 $('ev_rs').onclick=()=>evSet('','','');
 document.addEventListener('visibilitychange',evRefresh);setInterval(evRefresh,30000);
-function openSale(scan){if(evNeed())return;show('sale');render();if(scan)startScan()}
+function openSale(scan){if(evNeed())return;autoSync();show('sale');render();if(scan)startScan()}
 $('fab').onclick=()=>openSale(true);
 $('manual').onclick=()=>{if(evNeed())return;mq={};ms={};mGift=false;mRender();show('msale')};
 $('back').onclick=async()=>{
@@ -2766,9 +2766,18 @@ $('cart').addEventListener('click',e=>{const t=e.target.closest('button')||e.tar
   else if(t.dataset.f!=null)cart[t.dataset.f].free=!cart[t.dataset.f].free;else return;render()});
 $('cart').addEventListener('change',e=>{const d=e.target.dataset;if(d.disc!=null)cart[d.disc].discount=Math.max(0,parseFloat(e.target.value)||0);else if(d.pr!=null)cart[d.pr].price=Math.max(0,parseFloat(e.target.value)||0);else return;render()});
 document.querySelectorAll('.pay button').forEach(b=>b.onclick=()=>{mode=b.dataset.m;document.querySelectorAll('.pay button').forEach(x=>x.classList.toggle('on',x===b))});
+async function freshSync(){if(navigator.onLine===false)return;try{await flush()}catch(e){}try{await Promise.all([syncStock(),loadSales()])}catch(e){}}
+let _auto=0;function autoSync(){if(_auto||document.visibilityState==='hidden'||navigator.onLine===false)return;_auto=1;freshSync().finally(()=>{_auto=0})}
+setInterval(autoSync,20000);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')autoSync()});addEventListener('online',autoSync);
+function stockShort(){const A=availAll(),need={},nm={};cart.forEach(l=>{const k=String(l.code).toUpperCase()+'|'+(l.size||'');need[k]=(need[k]||0)+l.qty;nm[k]=l.name+(l.size?' ('+l.size+')':'')});
+  return Object.keys(need).filter(k=>{const c=k.split('|')[0];return A.tracked(c)&&A.get(c,k.split('|')[1])<need[k]}).map(k=>nm[k]+' – '+A.get(k.split('|')[0],k.split('|')[1])+' left')}
 $('done').onclick=async()=>{
   if(!cart.length){toast('Cart is empty',1);return}
   if(evNeed())return;
+  const db=$('done');if(db.disabled)return;db.disabled=true;
+  try{await Promise.race([freshSync(),new Promise(r=>setTimeout(r,6000))]);
+    const sh=stockShort();if(sh.length){toast('Not enough stock now: '+sh.join(', ')+'. Remove or reduce to continue',1);render();return}}
+  finally{db.disabled=false}
   const r2=n=>Math.round(n*100)/100;
   const bill={bill:'B'+Date.now().toString(36).toUpperCase(),time:new Date().toISOString(),mode:cart.every(l=>l.free)?'Giveaway':mode,event:eventName(),agent:agentName(),location:locName(),
     items:cart.map(l=>({code:l.code,name:l.name,size:l.size||'',price:l.price,qty:l.qty,discount:r2(l.free?l.price*l.qty:l.discount),final:r2(fin(l))}))};
