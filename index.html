@@ -2910,6 +2910,10 @@ function fitTitle(){const h=$('ttl');if(!h||!h.clientWidth)return;const maxH=(h.
   for(let f=40;f>=14;f-=.25){h.style.fontSize=f+'px';if(h.scrollWidth<=h.clientWidth&&h.scrollHeight<=maxH){h.style.fontSize=(f*.9)+'px';break}}}
 addEventListener('resize',fitTitle);addEventListener('load',fitTitle);if(document.fonts&&document.fonts.ready)document.fonts.ready.then(fitTitle);
 fitTitle();
+(function(){const sig=JSON.stringify(EMBED);if(!Object.values(EMBED).some(Boolean)||ld('pos_embed','')===sig)return;
+  $('c_form').value=EMBED.form;$('c_pform').value=EMBED.pform;$('c_prod').value=EMBED.products;$('c_sales').value=EMBED.sales;$('c_burl').value=EMBED.billUrl;$('c_stock').value=EMBED.stock;
+  $('c_ok').click();sv('pos_embed',sig)})();
+document.querySelectorAll('img[data-fi]').forEach(i=>i.src=FREEIMG);
 evRefresh();
 render();status();dash();sync();
 {const rb=billFromToken(location.hash.slice(1));if(rb){document.body.classList.add('rv');showBill(rb)}}
