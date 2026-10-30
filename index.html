@@ -2565,12 +2565,15 @@ async function syncProducts(){
   try{const mp=new Map();for(const u of cfg.products.split(/\s+/).filter(Boolean)){const rows=await getCsv(u),o=/^timestamp/i.test(((rows[0]||[])[0]||'').trim())?1:0;rows.slice(1).forEach(r=>{const c=(r[o]||'').trim();if(c)mp.set(c.toLowerCase(),{code:c,name:(r[o+1]||'').trim(),price:parseFloat(r[o+2])||0,sizes:normSizes(r[o+3])})})}const p=[...mp.values()];
     if(p.length){products=mergeNew(p);sv('pos_products',products)}}catch(e){toast('Could not load products – using saved list',1)}
 }
-async function flush(){
+let _fl=null;
+function flush(){if(_fl)return _fl;_fl=_flush().finally(()=>{_fl=null});return _fl}
+async function _flush(){
   if(!cfg.form||!cfg.map)return;const m=cfg.map;
   for(const b of queue.slice()){
-    try{for(let n=b.sent||0;n<b.items.length;n++){const i=b.items[n],f=new URLSearchParams();
+    try{const todo=b.items.map((i,n)=>[i,n]).filter(([i,n])=>n>=(b.sent||0)&&!i.s);
+      await Promise.all(todo.map(([i])=>{const f=new URLSearchParams();
         f.set(m.time,b.time);f.set(m.bill,b.bill);f.set(m.code,i.code);f.set(m.name,(!m.size&&i.size)?i.name+' ('+i.size+')':i.name);f.set(m.price,i.price);f.set(m.qty,i.qty);f.set(m.discount,i.discount);f.set(m.final,i.final);f.set(m.mode,b.mode);if(m.size)f.set(m.size,i.size||'');if(m.event)f.set(m.event,b.event||'');if(m.agent)f.set(m.agent,b.agent||'');if(m.location)f.set(m.location,b.location||'');
-        await fetch(cfg.form,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:f});b.sent=n+1;sv('pos_queue',queue)}
+        return fetch(cfg.form,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:f}).then(()=>{i.s=true;sv('pos_queue',queue)})}));
       queue=queue.filter(x=>x.bill!==b.bill);sv('pos_queue',queue)}catch(e){break}
   }status();
 }
@@ -2766,16 +2769,20 @@ $('cart').addEventListener('click',e=>{const t=e.target.closest('button')||e.tar
   else if(t.dataset.f!=null)cart[t.dataset.f].free=!cart[t.dataset.f].free;else return;render()});
 $('cart').addEventListener('change',e=>{const d=e.target.dataset;if(d.disc!=null)cart[d.disc].discount=Math.max(0,parseFloat(e.target.value)||0);else if(d.pr!=null)cart[d.pr].price=Math.max(0,parseFloat(e.target.value)||0);else return;render()});
 document.querySelectorAll('.pay button').forEach(b=>b.onclick=()=>{mode=b.dataset.m;document.querySelectorAll('.pay button').forEach(x=>x.classList.toggle('on',x===b))});
-async function freshSync(){if(navigator.onLine===false)return;try{await flush()}catch(e){}try{await Promise.all([syncStock(),loadSales()])}catch(e){}}
+let _lastFresh=0,_lastStock=0;
+async function freshSync(full){if(navigator.onLine===false)return;
+  if(queue.length){try{await flush()}catch(e){}}
+  const t=[loadSales()];if(full||Date.now()-_lastStock>30000){_lastStock=Date.now();t.push(syncStock())}
+  try{await Promise.all(t)}catch(e){}_lastFresh=Date.now()}
 let _auto=0;function autoSync(){if(_auto||document.visibilityState==='hidden'||navigator.onLine===false)return;_auto=1;freshSync().finally(()=>{_auto=0})}
-setInterval(autoSync,20000);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')autoSync()});addEventListener('online',autoSync);
+setInterval(autoSync,10000);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')autoSync()});addEventListener('online',autoSync);
 function stockShort(){const A=availAll(),need={},nm={};cart.forEach(l=>{const k=String(l.code).toUpperCase()+'|'+(l.size||'');need[k]=(need[k]||0)+l.qty;nm[k]=l.name+(l.size?' ('+l.size+')':'')});
   return Object.keys(need).filter(k=>{const c=k.split('|')[0];return A.tracked(c)&&A.get(c,k.split('|')[1])<need[k]}).map(k=>nm[k]+' – '+A.get(k.split('|')[0],k.split('|')[1])+' left')}
 $('done').onclick=async()=>{
   if(!cart.length){toast('Cart is empty',1);return}
   if(evNeed())return;
   const db=$('done');if(db.disabled)return;db.disabled=true;
-  try{await Promise.race([freshSync(),new Promise(r=>setTimeout(r,6000))]);
+  try{if(Date.now()-_lastFresh>12000)await Promise.race([freshSync(true),new Promise(r=>setTimeout(r,2000))]);
     const sh=stockShort();if(sh.length){toast('Not enough stock now: '+sh.join(', ')+'. Remove or reduce to continue',1);render();return}}
   finally{db.disabled=false}
   const r2=n=>Math.round(n*100)/100;
@@ -2811,10 +2818,10 @@ function refreshLast(){
 }
 /* removes every entry of the last bill (same bill #) */
 function deleteLast(b){
-  const qi=queue.findIndex(x=>x.bill===b.bill),inQ=qi>=0,sentN=inQ?(queue[qi].sent||0):b.items.length;
+  const qi=queue.findIndex(x=>x.bill===b.bill),inQ=qi>=0,sentItems=inQ?b.items.filter((i,n)=>n<(queue[qi].sent||0)||i.s):b.items.slice(),sentN=sentItems.length;
   queue=queue.filter(x=>x.bill!==b.bill);
   if(sentN===0)log=log.filter(x=>x.bill!==b.bill);
-  else{b.items=b.items.slice(0,sentN);b.void=true;
+  else{b.items=sentItems;b.void=true;
     const rv={bill:'R'+b.bill,time:b.time,mode:b.mode,event:b.event||'',agent:b.agent||'',location:b.location||'',rev:true,items:b.items.map(i=>({code:i.code,name:i.name,size:i.size||'',price:i.price,qty:-i.qty,discount:-i.discount,final:-i.final}))};
     log.push(rv);queue.push(rv)}
   sv('pos_log',log);sv('pos_queue',queue);status();dash();flush().then(loadSales);
